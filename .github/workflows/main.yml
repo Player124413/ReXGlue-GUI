@@ -11,34 +11,22 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    # 1. Клонируем репозиторий на виртуальную машину
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. Настраиваем .NET SDK (необходим для работы нового формата .slnx)
-    - name: Setup .NET Core SDK
+    # Накатываем актуальный .NET SDK (поддерживающий .slnx)
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x' # Укажите актуальную версию .NET, используемую в проекте
+        dotnet-version: '8.x' # или '9.x', если проект обновлен
 
-    # 3. Настраиваем MSBuild (инструмент сборки Visual Studio)
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+    # Публикуем (собираем) проект сразу в одну фиксированную папку output
+    - name: dotnet publish
+      run: dotnet publish "ReXGlue GUI.slnx" -c Release -o ./output /p:PublishSingleFile=true /p:PublishReadyToRun=true
 
-    # 4. Восстанавливаем зависимости и NuGet-пакеты
-    - name: Restore NuGet packages
-      run: nuget restore "ReXGlue GUI.slnx"
-
-    # 5. Собираем проект в конфигурации Release
-    - name: Build Solution
-      run: msbuild "ReXGlue GUI.slnx" -p:Configuration=Release -p:Platform="Any CPU"
-
-    # 6. Сохраняем готовый исполняемый файл в артефакты сборки GitHub
+    # Забираем ВСЁ содержимое папки output. Экзешник точно будет там.
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ReXGlue-GUI-Release
-        path: |
-          **/bin/Release/**/ReXGlue GUI.exe
-          **/bin/Release/**/*.dll
-
+        name: ReXGlue-GUI-Windows-Release
+        path: ./output/
